@@ -10,22 +10,24 @@ var config = sails.config,
 module.exports = {
   indexItem: indexItem,
   searchItem : searchItem,
-  securityDepositFilter : securityDepositFilter,
-  priceFilter : priceFilter,
-  deliveryFilter : deliveryFilter,
-  distanceFilter : distanceFilter,
-  toolFilter : toolFilter,
-  updateBlockedDates : updateBlockedDates,
-  updateToolDocument : updateToolDocument,
-  searchTool : searchTool,
-  searchToolByReferenceId : searchToolByReferenceId,
-  updateReviews : updateReviews,
-  priceAggregation : priceAggregation,
-  checkIfBlockedDates : checkIfBlockedDates,
-  addImageToTool : addImageToTool,
-  updateBookedDates : updateBookedDates,
-  deleteToolFromElastic : deleteToolFromElastic,
-  addANewFieldToDocument : addANewFieldToDocument
+  searchItemWithDistance : searchItemWithDistance,
+  addANewFieldToDocument : addANewFieldToDocument,
+  createScriptWithFieldName : createScriptWithFieldName
+  // updateDocument : updateDocument,
+  // securityDepositFilter : securityDepositFilter,
+  // priceFilter : priceFilter,
+  // deliveryFilter : deliveryFilter,
+  // distanceFilter : distanceFilter,
+  // toolFilter : toolFilter,
+  // updateBlockedDates : updateBlockedDates,
+  // searchTool : searchTool,
+  // searchToolByReferenceId : searchToolByReferenceId,
+  // updateReviews : updateReviews,
+  // priceAggregation : priceAggregation,
+  // checkIfBlockedDates : checkIfBlockedDates,
+  // addImageToTool : addImageToTool,
+  // updateBookedDates : updateBookedDates,
+  // deleteToolFromElastic : deleteToolFromElastic
 };
 
 function indexItem(type, item) {
@@ -42,13 +44,70 @@ function indexItem(type, item) {
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#indexItem :: Error :: ", err);
+        console.log("ElasticSearchService#indexItem :: Error :: ", err);
         return reject(err);
       });
   });
 }
 
 function searchItem(searchQuery, lat, lon) {
+  return Q.promise(function(resolve, reject) {
+
+    elasticSearchClient
+      .search({
+        index : elasticSearchConfig.index,
+        type: "Tool",
+        body: {
+          "query":{
+            "bool":{
+              "must":{
+                "match": {
+                  "isActive": "true"
+                }
+              },
+              "should": [
+                {
+                  "match_phrase_prefix" : {
+                    "name" : {
+                      "query" : searchQuery,
+                      "max_expansions" : 75
+                    }
+                  }
+                },
+                {
+                  "match_phrase_prefix" : {
+                    "manufacturer" : {
+                      "query" : searchQuery,
+                      "max_expansions" : 75
+                    }
+                  }
+                },
+                {
+                  "match_phrase_prefix" : {
+                    "category" : {
+                      "query" : searchQuery,
+                      "max_expansions" : 75
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      })
+      .then(function (response) {
+        console.log("ElasticSearchService#searchItem :: Response :: ", response);
+        return resolve(response);
+      })
+      .catch(function(err) {
+        console.log("ElasticSearchService#searchItem :: Error :: ", err);
+        return reject(err);
+      });
+  });
+}
+
+
+function searchItemWithDistance(searchQuery, lat, lon, maxDistance) {
   return Q.promise(function(resolve, reject) {
 
     elasticSearchClient
@@ -108,7 +167,7 @@ function searchItem(searchQuery, lat, lon) {
           "filter" : {
             "geo_distance_range" : {
               "from" : "0mi",
-              "to" : elasticSearchConfig.maxDistance,
+              "to" : maxDistance,
               "location" : {
                 "lat" : lat,
                 "lon" : lon
@@ -118,13 +177,42 @@ function searchItem(searchQuery, lat, lon) {
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#searchItem :: Response :: ", response);
+        console.log("ElasticSearchService#searchItem :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#searchItem :: Error :: ", err);
+        console.log("ElasticSearchService#searchItem :: Error :: ", err);
         return reject(err);
       });
+  });
+}
+
+
+function addANewFieldToDocument(referenceId, fieldName){
+  return Q.promise(function(resolve, reject) {
+    createScriptWithFieldName(fieldName)
+    .then(function(script){
+      elasticSearchClient
+        .update({
+          index: elasticSearchConfig.index,
+          type: "Tool",
+          id: referenceId,
+          body: {
+            "script" : fieldName
+          }
+        });
+      return resolve();
+    })
+    .catch(function(err){
+      console.log(err);
+      return reject(err);
+    });
+  });
+}
+
+function createScriptWithFieldName(fieldName){
+  return Q.promise(function(resolve, reject){
+    return 'ctx._source.'+fieldname+ '= true';
   });
 }
 
@@ -150,11 +238,11 @@ function securityDepositFilter(conditionPara){
             }
           })
           .then(function (response) {
-            sails.log.info("ElasticSearchService#securityDepositFilter :: Response :: ", response);
+            console.log("ElasticSearchService#securityDepositFilter :: Response :: ", response);
             return resolve(response);
           })
           .catch(function(err) {
-            sails.log.error("ElasticSearchService#securityDepositFilter :: Error :: ", err);
+            console.log("ElasticSearchService#securityDepositFilter :: Error :: ", err);
             return reject(err);
           });
         break;
@@ -176,11 +264,11 @@ function securityDepositFilter(conditionPara){
             }
           })
           .then(function (response) {
-            sails.log.info("ElasticSearchService#securityDepositFilter :: Response :: ", response);
+            console.log("ElasticSearchService#securityDepositFilter :: Response :: ", response);
             return resolve(response);
           })
           .catch(function(err) {
-            sails.log.error("ElasticSearchService#securityDepositFilter :: Error :: ", err);
+            console.log("ElasticSearchService#securityDepositFilter :: Error :: ", err);
             return reject(err);
           });
         break;
@@ -208,11 +296,11 @@ function priceFilter(priceLow, priceHigh){
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#priceFilter :: Response :: ", response);
+        console.log("ElasticSearchService#priceFilter :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#priceFilter :: Error :: ", err);
+        console.log("ElasticSearchService#priceFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -237,11 +325,11 @@ function deliveryFilter(){
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#deliveryFilter :: Response :: ", response);
+        console.log("ElasticSearchService#deliveryFilter :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#deliveryFilter :: Error :: ", err);
+        console.log("ElasticSearchService#deliveryFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -267,11 +355,11 @@ function distanceFilter(lowRange, highRange, lat, lon){
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#distanceFilter :: Response :: ", response);
+        console.log("ElasticSearchService#distanceFilter :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#distanceFilter :: Error :: ", err);
+        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -446,11 +534,11 @@ function toolFilter(toolFilterData, dateValues, categories){
         }
       })
       .then(function (response) {
-        // sails.log.info("ElasticSearchService#toolFilter :: Response :: ", response);
+        // console.log("ElasticSearchService#toolFilter :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#toolFilter :: Error :: ", err);
+        console.log("ElasticSearchService#toolFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -498,7 +586,7 @@ function updateBlockedDates(referenceId, dates){
         }
       })
       .catch(function (err) {
-        sails.log.error("ElasticSearchService#distanceFilter :: Error :: ", err);
+        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -546,13 +634,13 @@ function updateBookedDates(referenceId, dates){
         }
       })
       .catch(function (err) {
-        sails.log.error("ElasticSearchService#distanceFilter :: Error :: ", err);
+        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
         return reject(err);
       });
   });
 }
 
-function updateToolDocument(referenceId, tool){
+function updateDocument(referenceId, tool){
   return Q.promise(function(resolve, reject){
     elasticSearchClient
       .update({
@@ -584,7 +672,7 @@ function updateToolDocument(referenceId, tool){
         return resolve();
       })
       .catch(function (err) {
-        sails.log.error("ElasticSearchService#updateToolDocument :: Error :: ", err);
+        console.log("ElasticSearchService#updateDocument :: Error :: ", err);
         return reject(err);
       });
   });
@@ -642,11 +730,11 @@ function searchTool(formData, dateValues) {
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#searchItem :: Response :: ", response);
+        console.log("ElasticSearchService#searchItem :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#searchItem :: Error :: ", err);
+        console.log("ElasticSearchService#searchItem :: Error :: ", err);
         return reject(err);
       });
   });
@@ -672,11 +760,11 @@ function searchToolByReferenceId(referenceId){
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#searchItem :: Response :: ", response);
+        console.log("ElasticSearchService#searchItem :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#searchItem :: Error :: ", err);
+        console.log("ElasticSearchService#searchItem :: Error :: ", err);
         return reject(err);
       });
   });
@@ -853,11 +941,11 @@ function priceAggregation(data,dateValues,categories){
         }
       })
       .then(function (response) {
-        sails.log.info("ElasticSearchService#distanceFilter :: Response :: ", response);
+        console.log("ElasticSearchService#distanceFilter :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#distanceFilter :: Error :: ", err);
+        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -913,7 +1001,7 @@ function checkIfBlockedDates(referenceId, dateValues) {
           });
         });
 
-        sails.log.info("ElasticSearchService#searchItem :: Response :: ", response);
+        console.log("ElasticSearchService#searchItem :: Response :: ", response);
         var newResponse = {
           isBlocked : isBlocked,
           tool : data
@@ -922,7 +1010,7 @@ function checkIfBlockedDates(referenceId, dateValues) {
         return resolve(newResponse);
       })
       .catch(function(err) {
-        sails.log.error("ElasticSearchService#searchItem :: Error :: ", err);
+        console.log("ElasticSearchService#searchItem :: Error :: ", err);
         return reject(err);
       });
   });
@@ -954,25 +1042,10 @@ function deleteToolFromElastic(referenceId){
     var url = 'http://localhost:9200/everytasc/Tool/'+ referenceId;
     request.delete(url, function (error, response, body) {
       if(error) {
-        sails.log.error("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
+        console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
         return reject(error);
       }
       return resolve();
     });
-  });
-}
-
-function addANewFieldToDocument(referenceId){
-  return Q.promise(function(resolve, reject) {
-    elasticSearchClient
-      .update({
-        index: elasticSearchConfig.index,
-        type: "Tool",
-        id: referenceId,
-        body: {
-          "script" : "ctx._source.isPickupAvailable = true"
-        }
-      });
-    return resolve();
   });
 }
