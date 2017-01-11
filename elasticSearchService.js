@@ -13,7 +13,7 @@ module.exports = {
   searchItemWithDistance : searchItemWithDistance,
   addANewFieldToDocument : addANewFieldToDocument,
   createScriptWithFieldName : createScriptWithFieldName
-  // updateDocument : updateDocument,
+  updateDocument : updateDocument
   // securityDepositFilter : securityDepositFilter,
   // priceFilter : priceFilter,
   // deliveryFilter : deliveryFilter,
@@ -56,35 +56,19 @@ function searchItem(searchQuery, lat, lon) {
     elasticSearchClient
       .search({
         index : elasticSearchConfig.index,
-        type: "Tool",
+        type: "type_of_index",
         body: {
           "query":{
             "bool":{
               "must":{
                 "match": {
-                  "isActive": "true"
+                  "field_Name": value
                 }
               },
               "should": [
                 {
                   "match_phrase_prefix" : {
-                    "name" : {
-                      "query" : searchQuery,
-                      "max_expansions" : 75
-                    }
-                  }
-                },
-                {
-                  "match_phrase_prefix" : {
-                    "manufacturer" : {
-                      "query" : searchQuery,
-                      "max_expansions" : 75
-                    }
-                  }
-                },
-                {
-                  "match_phrase_prefix" : {
-                    "category" : {
+                    "field_Name" : {
                       "query" : searchQuery,
                       "max_expansions" : 75
                     }
@@ -640,7 +624,7 @@ function updateBookedDates(referenceId, dates){
   });
 }
 
-function updateDocument(referenceId, tool){
+function updateDocument(referenceId, document){
   return Q.promise(function(resolve, reject){
     elasticSearchClient
       .update({
@@ -649,22 +633,8 @@ function updateDocument(referenceId, tool){
         id : referenceId,
         body: {
           "doc" : {
-            "referenceId" : tool.referenceId,
-            "category" : tool.category,
-            "name" : tool.name,
-            "price" : tool.price,
-            "deliveryCharges" : tool.deliveryCharges,
-            "securityDeposit" : tool.securityDeposit,
-            "toolDescription" : tool.toolDescription,
-            "line1" : tool.line1,
-            "line2" : tool.line2,
-            "city" : tool.city,
-            "zipcode" : tool.zipcode,
-            "state" : tool.state,
-            "country" : tool.country,
-            "location" : tool.location,
-            "assets" : tool.assets,
-            "isActive" : tool.isActive
+            //Update the fields one by one
+            //field1 : document.field1
           }
         }
       })
