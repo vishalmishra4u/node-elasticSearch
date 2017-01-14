@@ -195,7 +195,7 @@ function createScriptWithFieldName(fieldName){
   });
 }
 
-function priceAggregation(data,dateValues,categories){
+function priceAggregation(searchData, searchQuery){
   return Q.promise(function(resolve,reject){
     var filterCriteria = [];
 
@@ -204,13 +204,14 @@ function priceAggregation(data,dateValues,categories){
         "bool" : {
           "must":{
             "match": {
-              "isActive": "true"
+              //Field which must match with documentry
+              "field_Name": value
             }
           },
           "should" : [
             {
               "match_phrase_prefix" : {
-                "name" : {
+                "field_Name" : {
                   "query" : data.searchQuery,
                   "max_expansions" : 75
                 }
@@ -221,83 +222,34 @@ function priceAggregation(data,dateValues,categories){
       });
     }
 
-    filterCriteria.push(
-      {
-        "geo_distance_range" : {
-          "from" : data.fromDistance ? data.fromDistance : "0mi",
-          "to" : data.toDistance ? data.toDistance : elasticSearchConfig.maxDistance,
-          "location" : {
-            "lat" : data.lat, "lon" : data.lon
-          }
-        }
-      });
+    //Push to filterCriteria array for the fields to add conditions
+    //e.g : geo-distance-query
+    // filterCriteria.push(
+    //   {
+    //     "geo_distance_range" : {
+    //       "from" : searchData.fromDistance ? searchData.fromDistance : "0mi",
+    //       "to" : searchData.toDistance ? searchData.toDistance : searchData.maxDistance,
+    //       "location" : {
+    //         "lat" : searchData.lat, "lon" : searchData.lon
+    //       }
+    //     }
+    //   });
 
-    if(dateValues){
-      filterCriteria.push(
-        {
-          "filtered" : {
-            "filter": {
-              "not" : {
-                "terms": {
-                  "blockedDates": dateValues
-                }
-              }
-            }
-          }
-        }
-      );
-    }
-
-    if(dateValues){
+    //e.g : A not query for filtering
+    //querying the sent dates do not match a field
+    if(searchData.dateValues){
       filterCriteria.push({
         "filtered" : {
           "filter": {
             "not" : {
+              // 'terms' is used to compare multiple data
               "terms": {
-                "bookedDates": dateValues
+                "field_Name": value
               }
             }
           }
         }
       });
-    }
-
-    if(data.isDeliveryAvailable === "true") {
-      filterCriteria.push({
-        "term":{
-          "isDeliveryAvailable" : data.isDeliveryAvailable
-        }
-      });
-    }
-
-    if(data.isPickUpAvailable === "true") {
-      filterCriteria.push({
-        "term":{
-          "isPickUpAvailable" : data.isPickUpAvailable
-        }
-      });
-    }
-
-    if(data.isExcludeSecurityDeposit === "true") {
-      filterCriteria.push({
-        "term": {
-          "isSecurityDeposit" : false
-        }
-      });
-    }
-
-    if(data.rating) {
-      filterCriteria.push(
-        {
-          "nested" : {
-            "path" : "reviews", "query" : {
-              "range" : {
-                "reviews.avgRating" : {
-                  "gte" : data.rating,"lte" : "5"}
-              }
-            }
-          }
-        });
     }
 
     elasticSearchClient
@@ -310,10 +262,11 @@ function priceAggregation(data,dateValues,categories){
               "must": filterCriteria
             }
           },
+          //This will give an aggregation of min, max and average
           "aggs": {
             "priceStats": {
               "stats": {
-                "field": "price"
+                "field": "field_on_which_aggregation_has_to_be_done"
               }
             }
           }
