@@ -9,12 +9,14 @@ var config = sails.config,
 
 module.exports = {
   indexItem: indexItem,
+  deleteToolFromElastic : deleteToolFromElastic,
   searchItem : searchItem,
   searchItemWithDistance : searchItemWithDistance,
   addANewFieldToDocument : addANewFieldToDocument,
   createScriptWithFieldName : createScriptWithFieldName
+  priceAggregation : priceAggregation,
   updateDocument : updateDocument,
-  priceAggregation : priceAggregation
+  deleteDocumentFromElastic : deleteDocumentFromElastic
   // securityDepositFilter : securityDepositFilter,
   // priceFilter : priceFilter,
   // deliveryFilter : deliveryFilter,
@@ -26,8 +28,7 @@ module.exports = {
   // updateReviews : updateReviews,
   // checkIfBlockedDates : checkIfBlockedDates,
   // addImageToTool : addImageToTool,
-  // updateBookedDates : updateBookedDates,
-  // deleteToolFromElastic : deleteToolFromElastic
+  // updateBookedDates : updateBookedDates
 };
 
 function indexItem(type, item) {
@@ -47,6 +48,19 @@ function indexItem(type, item) {
         console.log("ElasticSearchService#indexItem :: Error :: ", err);
         return reject(err);
       });
+  });
+}
+
+function deleteDocumentFromElastic(referenceId){
+  return Q.promise(function(resolve, reject) {
+    var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
+    request.delete(url, function (error, response, body) {
+      if(error) {
+        console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
+        return reject(error);
+      }
+      return resolve();
+    });
   });
 }
 
@@ -924,17 +938,4 @@ function addImageToTool(referenceId, asset){
         }
       }
     });
-}
-
-function deleteToolFromElastic(referenceId){
-  return Q.promise(function(resolve, reject) {
-    var url = 'http://localhost:9200/everytasc/Tool/'+ referenceId;
-    request.delete(url, function (error, response, body) {
-      if(error) {
-        console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
-        return reject(error);
-      }
-      return resolve();
-    });
-  });
 }
