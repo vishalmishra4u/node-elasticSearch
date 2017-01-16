@@ -18,12 +18,7 @@ module.exports = {
   updateDocument : updateDocument,
   deleteDocumentFromElastic : deleteDocumentFromElastic,
   searchToolByReferenceId : searchToolByReferenceId
-  // securityDepositFilter : securityDepositFilter,
-  // priceFilter : priceFilter,
-  // deliveryFilter : deliveryFilter,
-  // distanceFilter : distanceFilter,
-  // toolFilter : toolFilter,
-  // checkIfBlockedDates : checkIfBlockedDates
+  UpperLowerlimitFilter : UpperLowerlimitFilter
 };
 
 function indexItem(type, item) {
@@ -293,80 +288,19 @@ function priceAggregation(searchData, searchQuery){
   });
 }
 
-function securityDepositFilter(conditionPara){
-  return Q.promise(function(resolve, reject){
-
-    switch (conditionPara){
-      case 1:
-        elasticSearchClient
-          .search({
-            index : elasticSearchConfig.index,
-            type: "Tool",
-            body: {
-              query:{
-                "filtered":{
-                  "filter":{
-                    "match":{
-                      "isSecurityDeposit" : true
-                    }
-                  }
-                }
-              }
-            }
-          })
-          .then(function (response) {
-            console.log("ElasticSearchService#securityDepositFilter :: Response :: ", response);
-            return resolve(response);
-          })
-          .catch(function(err) {
-            console.log("ElasticSearchService#securityDepositFilter :: Error :: ", err);
-            return reject(err);
-          });
-        break;
-      case 2:
-        elasticSearchClient
-          .search({
-            index : elasticSearchConfig.index,
-            type: "Tool",
-            body: {
-              query:{
-                "filtered":{
-                  "filter":{
-                    "match":{
-                      "isSecurityDeposit" : false
-                    }
-                  }
-                }
-              }
-            }
-          })
-          .then(function (response) {
-            console.log("ElasticSearchService#securityDepositFilter :: Response :: ", response);
-            return resolve(response);
-          })
-          .catch(function(err) {
-            console.log("ElasticSearchService#securityDepositFilter :: Error :: ", err);
-            return reject(err);
-          });
-        break;
-      default :
-        return null;
-    }
-  });
-}
-
-function priceFilter(priceLow, priceHigh){
+//Filter on the basis of lower and upper limit
+function UpperLowerlimitFilter(lowerLimit, upperLimit){
   return Q.promise(function(resolve, reject){
     elasticSearchClient
       .search({
         index : elasticSearchConfig.index,
-        type: "Tool",
+        type: "type_Name",
         body: {
           "query": {
             "range" : {
-              "price" : {
-                "gte" : priceLow,
-                "lte" : priceHigh
+              "field_Name" : {
+                "gte" : lowerLimit,
+                "lte" : upperLimit
               }
             }
           }
@@ -383,243 +317,6 @@ function priceFilter(priceLow, priceHigh){
   });
 }
 
-function deliveryFilter(){
-  return Q.promise(function(resolve, reject){
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          query:{
-            "filtered":{
-              "filter":{
-                "match":{
-                  "isDeliveryAvailable" : true
-                }
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#deliveryFilter :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#deliveryFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function distanceFilter(lowRange, highRange, lat, lon){
-  return Q.promise(function(resolve, reject){
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "filter" : {
-            "geo_distance_range" : {
-              "from" : lowRange,
-              "to" : highRange,
-              "location" : {
-                "lat" : lat,
-                "lon" : lon
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#distanceFilter :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function toolFilter(toolFilterData, dateValues, categories){
-
-  return Q.promise(function(resolve, reject){
-    var fromDistance = toolFilterData.fromDistance ? toolFilterData.fromDistance : "0mi";
-    var toDistance = toolFilterData.toDistance ? toolFilterData.toDistance : elasticSearchConfig.maxDistance;
-    var filterCriteria = [
-      "_score" ,
-      {
-        "geo_distance_range" : {
-          "from" : fromDistance ? fromDistance : "0mi",
-          "to" : toDistance ? toDistance : elasticSearchConfig.maxDistance,
-          "location" : {
-            "lat" : toolFilterData.lat,
-            "lon" : toolFilterData.lon
-          }
-        }
-      }
-    ];
-
-    if(toolFilterData.isDeliveryAvailable === "true") {
-      filterCriteria.push({
-        "term":{
-          "isDeliveryAvailable" : toolFilterData.isDeliveryAvailable
-        }
-      });
-    }
-
-    if(toolFilterData.isPickUpAvailable === "true") {
-      filterCriteria.push({
-        "term":{
-          "isPickUpAvailable" : toolFilterData.isPickUpAvailable
-        }
-      });
-    }
-
-    if(toolFilterData.isExcludeSecurityDeposit === "true") {
-      filterCriteria.push({
-        "term": {
-          "isSecurityDeposit" : false
-        }
-      });
-    }
-
-    if(categories){
-      filterCriteria.push({
-        "query":{
-          "terms" : {
-            "categoryReferenceId" : Array.isArray(categories) ? categories : [ categories ]
-          }
-        }
-      });
-    }
-
-    if(dateValues){
-      filterCriteria.push({
-        "filtered" : {
-          "filter": {
-            "not" : {
-              "terms": {
-                "blockedDates": dateValues
-              }
-            }
-          }
-        }
-      });
-    }
-
-    if(dateValues){
-      filterCriteria.push({
-        "filtered" : {
-          "filter": {
-            "not" : {
-              "terms": {
-                "bookedDates": dateValues
-              }
-            }
-          }
-        }
-      });
-    }
-
-    filterCriteria.push({
-      "term" : {
-        "isActive" : true
-      }
-    });
-
-    if(toolFilterData.searchQuery) {
-      filterCriteria.push({
-        "bool": {
-          "should": [
-            {
-              "match_phrase_prefix" : {
-                "name" : {
-                  "query" : toolFilterData.searchQuery,
-                  "max_expansions" : 50
-                }
-              }
-            },
-            {
-              "match_phrase_prefix" : {
-                "manufacturer" : {
-                  "query" : toolFilterData.searchQuery,
-                  "max_expansions" : 50
-                }
-              }
-            },
-            {
-              "match_phrase_prefix" : {
-                "category" : {
-                  "query" : toolFilterData.searchQuery,
-                  "max_expansions" : 50
-                }
-              }
-            }
-          ]
-        }
-      });
-    }
-
-    if(toolFilterData.rating) {
-      filterCriteria.push({
-        "nested" : {
-          "path" : "reviews", "query" : {
-            "range" : {
-              "reviews.avgRating" : {
-                "gte" : toolFilterData.rating,"lte" : "5"}
-            }
-          }
-        }
-      });
-    }
-
-    if(toolFilterData.priceLowerRange && toolFilterData.priceUpperRange){
-      filterCriteria.push({
-        "range" : {
-          "price": {
-            "gte": toolFilterData.priceLowerRange,
-            "lte": toolFilterData.priceUpperRange}
-        }
-      });
-    }
-
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "query": {
-            "bool": {
-              must: filterCriteria
-            }
-          },
-          "sort": [
-            {
-              "_geo_distance": {
-                "location": {
-                  "lat":  toolFilterData.lat,
-                  "lon": toolFilterData.lon
-                },
-                "order":         "asc",
-                "unit":          "mi",
-                "distance_type": "plane"
-              }
-            }
-          ]
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#toolFilter :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#toolFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
 
 function updateDocument(referenceId, document){
   return Q.promise(function(resolve, reject){
@@ -668,71 +365,6 @@ function searchToolByReferenceId(referenceId){
       .then(function (response) {
         console.log("ElasticSearchService#searchItem :: Response :: ", response);
         return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#searchItem :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function checkIfBlockedDates(referenceId, dateValues) {
-  return Q.promise(function(resolve, reject) {
-    elasticSearchClient
-      .search({
-        index: elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "size": 1,
-          query: {
-            "filtered": {
-              "filter": {
-                "match": {
-                  "referenceId": referenceId
-                }
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        var data = [];
-        var isBlocked = false;
-        _.forEach(response.hits.hits, function(hit) {
-          data.push(hit._source);
-        });
-
-        _.forEach(data[0].blockedDates, function(dates){
-          _.forEach(dateValues, function(rentalDate){
-            if(dates === rentalDate){
-              isBlocked = true;
-              return reject({
-                code : 400,
-                message: 'INITIALIZE_RENTAL_NOT_POSSIBLE_DUE_TO_BLOCKED_DATES'
-              });
-            }
-          });
-        });
-
-        _.forEach(data[0].bookedDates, function(dates){
-          _.forEach(dateValues, function(rentalDate){
-            if(dates === rentalDate){
-              isBlocked = true;
-              return reject({
-                code : 400,
-                message: 'INITIALIZE_RENTAL_NOT_POSSIBLE_DUE_TO_BOOKED_DATES'
-              });
-            }
-          });
-        });
-
-        console.log("ElasticSearchService#searchItem :: Response :: ", response);
-        var newResponse = {
-          isBlocked : isBlocked,
-          tool : data
-        };
-
-        return resolve(newResponse);
       })
       .catch(function(err) {
         console.log("ElasticSearchService#searchItem :: Error :: ", err);
