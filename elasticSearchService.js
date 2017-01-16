@@ -16,19 +16,14 @@ module.exports = {
   createScriptWithFieldName : createScriptWithFieldName
   priceAggregation : priceAggregation,
   updateDocument : updateDocument,
-  deleteDocumentFromElastic : deleteDocumentFromElastic
+  deleteDocumentFromElastic : deleteDocumentFromElastic,
+  searchToolByReferenceId : searchToolByReferenceId
   // securityDepositFilter : securityDepositFilter,
   // priceFilter : priceFilter,
   // deliveryFilter : deliveryFilter,
   // distanceFilter : distanceFilter,
   // toolFilter : toolFilter,
-  // updateBlockedDates : updateBlockedDates,
-  // searchTool : searchTool,
-  // searchToolByReferenceId : searchToolByReferenceId,
-  // updateReviews : updateReviews,
-  // checkIfBlockedDates : checkIfBlockedDates,
-  // addImageToTool : addImageToTool,
-  // updateBookedDates : updateBookedDates
+  // checkIfBlockedDates : checkIfBlockedDates
 };
 
 function indexItem(type, item) {
@@ -64,6 +59,7 @@ function deleteDocumentFromElastic(referenceId){
   });
 }
 
+//Method to search a document by a search query
 function searchItem(searchQuery, lat, lon) {
   return Q.promise(function(resolve, reject) {
 
@@ -238,16 +234,16 @@ function priceAggregation(searchData, searchQuery){
 
     //Push to filterCriteria array for the fields to add conditions
     //e.g : geo-distance-query
-    // filterCriteria.push(
-    //   {
-    //     "geo_distance_range" : {
-    //       "from" : searchData.fromDistance ? searchData.fromDistance : "0mi",
-    //       "to" : searchData.toDistance ? searchData.toDistance : searchData.maxDistance,
-    //       "location" : {
-    //         "lat" : searchData.lat, "lon" : searchData.lon
-    //       }
-    //     }
-    //   });
+    filterCriteria.push(
+      {
+        "geo_distance_range" : {
+          "from" : searchData.fromDistance ? searchData.fromDistance : "0mi",
+          "to" : searchData.toDistance ? searchData.toDistance : searchData.maxDistance,
+          "location" : {
+            "lat" : searchData.lat, "lon" : searchData.lon
+          }
+        }
+      });
 
     //e.g : A not query for filtering
     //querying the sent dates do not match a field
@@ -615,107 +611,11 @@ function toolFilter(toolFilterData, dateValues, categories){
         }
       })
       .then(function (response) {
-        // console.log("ElasticSearchService#toolFilter :: Response :: ", response);
+        console.log("ElasticSearchService#toolFilter :: Response :: ", response);
         return resolve(response);
       })
       .catch(function(err) {
         console.log("ElasticSearchService#toolFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function updateBlockedDates(referenceId, dates){
-  return Q.promise(function(resolve, reject) {
-    elasticSearchClient
-      .search({
-        index: elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "size": 1,
-          query: {
-            "filtered": {
-              "filter": {
-                "match": {
-                  "referenceId": referenceId
-                }
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        if (response == null) {
-          return reject({
-            code : 404,
-            message : 'TOOL_NOT_FOUND'
-          });
-        }
-        else{
-          elasticSearchClient
-            .update({
-              index: elasticSearchConfig.index,
-              type: "Tool",
-              id: referenceId,
-              body: {
-                "doc": {
-                  "blockedDates": dates
-                }
-              }
-            });
-          return resolve(response);
-        }
-      })
-      .catch(function (err) {
-        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function updateBookedDates(referenceId, dates){
-  return Q.promise(function(resolve, reject) {
-    elasticSearchClient
-      .search({
-        index: elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "size": 1,
-          query: {
-            "filtered": {
-              "filter": {
-                "match": {
-                  "referenceId": referenceId
-                }
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        if (response == null) {
-          return reject({
-            code : 404,
-            message : 'TOOL_NOT_FOUND'
-          });
-        }
-        else{
-          elasticSearchClient
-            .update({
-              index: elasticSearchConfig.index,
-              type: "Tool",
-              id: referenceId,
-              body: {
-                "doc": {
-                  "bookedDates": dates
-                }
-              }
-            });
-          return resolve(response);
-        }
-      })
-      .catch(function (err) {
-        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
         return reject(err);
       });
   });
@@ -736,72 +636,11 @@ function updateDocument(referenceId, document){
         }
       })
       .then(function(){
+        console.log("ElasticSearchService#updateDocument :: response :: ", response);
         return resolve();
       })
       .catch(function (err) {
         console.log("ElasticSearchService#updateDocument :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function searchTool(formData, dateValues) {
-  return Q.promise(function(resolve, reject) {
-    //ToDo : add filter for booked Dates also
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "query": {
-            "filtered": {
-              "query": {
-                "bool":{
-                  "should": [
-                    {
-                      "match_phrase_prefix" : {
-                        "name" : {
-                          "query" : formData.searchQuery,
-                          "max_expansions" : 75
-                        }
-                      }
-                    },
-                    {
-                      "match_phrase_prefix" : {
-                        "manufacturer" : {
-                          "query" : formData.searchQuery,
-                          "max_expansions" : 75
-                        }
-                      }
-                    },
-                    {
-                      "match_phrase_prefix" : {
-                        "category" : {
-                          "query" : formData.searchQuery,
-                          "max_expansions" : 75
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              "filter": {
-                "not" : {
-                  "terms": {
-                    "blockedDates": dateValues
-                  }
-                }
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#searchItem :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#searchItem :: Error :: ", err);
         return reject(err);
       });
   });
@@ -812,7 +651,7 @@ function searchToolByReferenceId(referenceId){
     elasticSearchClient
       .search({
         index: elasticSearchConfig.index,
-        type: "Tool",
+        type: "index_Name",
         body: {
           "size": 1,
           query: {
@@ -835,23 +674,6 @@ function searchToolByReferenceId(referenceId){
         return reject(err);
       });
   });
-}
-
-function updateReviews(referenceId, avgRating, count){
-  elasticSearchClient
-    .update({
-      index: elasticSearchConfig.index,
-      type: "Tool",
-      id: referenceId,
-      body: {
-        "doc": {
-          "reviews": {
-            "avgRating": avgRating,
-            "count": count
-          }
-        }
-      }
-    });
 }
 
 function checkIfBlockedDates(referenceId, dateValues) {
@@ -917,25 +739,4 @@ function checkIfBlockedDates(referenceId, dateValues) {
         return reject(err);
       });
   });
-}
-
-function addImageToTool(referenceId, asset){
-  elasticSearchClient
-    .update({
-      index: elasticSearchConfig.index,
-      type: "Tool",
-      id: referenceId,
-      body: {
-        "doc": {
-          "assets": {
-            "standardResolution": asset.standardResolution,
-            "lowResolution": asset.lowResolution,
-            "highResolution" : asset.highResolution,
-            "thumbnail" : asset.thumbnail,
-            "isImageProcessed" : asset.isImageProcessed,
-            "localPath" : asset.localPath
-          }
-        }
-      }
-    });
 }
