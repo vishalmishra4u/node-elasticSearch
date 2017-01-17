@@ -3,11 +3,11 @@ A node module to access the elasticsearch documents by using various functions t
 
 ##Getting Started:
 
-*1. Method to index the document. It takes two params :
+*1. Method to index the document. It takes two params :  
   a) type : __type__ of the elastic
   b) item : Document to be indexed*
 
-_function indexItem(type, item) {
+`function indexItem(type, item) {
   return Q.promise(function(resolve, reject){
     elasticSearchClient
       .index({
@@ -25,9 +25,12 @@ _function indexItem(type, item) {
         return reject(err);
       });
   });
-}_
+}`
 
-_function deleteDocumentFromElastic(referenceId){
+*2. Method to delete the document:  
+Remove the __index_Name__ & __type_Name__ with the name and type of your index*
+
+`function deleteDocumentFromElastic(referenceId){
   return Q.promise(function(resolve, reject) {
     var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
     request.delete(url, function (error, response, body) {
@@ -38,7 +41,7 @@ _function deleteDocumentFromElastic(referenceId){
       return resolve();
     });
   });
-}_
+}`
 
 //Method to search a document by a search query
 function searchItem(searchQuery, lat, lon) {
