@@ -1,9 +1,13 @@
 # node-elasticSearch
 A node module to access the elasticsearch documents by using various functions to index, search, update, delete and various other tasks.
 
-Getting Started:
+##Getting Started:
 
-function indexItem(type, item) {
+*1. Method to index the document. It takes two params :
+  a) type : __type__ of the elastic
+  b) item : Document to be indexed*
+
+_function indexItem(type, item) {
   return Q.promise(function(resolve, reject){
     elasticSearchClient
       .index({
@@ -21,9 +25,9 @@ function indexItem(type, item) {
         return reject(err);
       });
   });
-}
+}_
 
-function deleteDocumentFromElastic(referenceId){
+_function deleteDocumentFromElastic(referenceId){
   return Q.promise(function(resolve, reject) {
     var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
     request.delete(url, function (error, response, body) {
@@ -34,7 +38,7 @@ function deleteDocumentFromElastic(referenceId){
       return resolve();
     });
   });
-}
+}_
 
 //Method to search a document by a search query
 function searchItem(searchQuery, lat, lon) {
