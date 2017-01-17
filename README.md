@@ -1,5 +1,7 @@
 # node-elasticSearch
-A node module to use various elastic search services.
+A node module to access the elasticsearch documents by using various functions to index, search, update, delete and various other tasks.
+
+Getting Started:
 
 function indexItem(type, item) {
   return Q.promise(function(resolve, reject){
