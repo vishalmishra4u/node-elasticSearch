@@ -3,29 +3,29 @@ A node module to access the elasticsearch documents by using various functions t
 
 ##Getting Started:
 
-*1. Method to index the document. It takes two params :  
-  a) type : __type__ of the elastic
-  b) item : Document to be indexed*
+1. Method to index the document. It takes two params :  
+  a) type : __type__ of the elastic  
+  b) item : Document to be indexed
 
-`function indexItem(type, item) {
-  return Q.promise(function(resolve, reject){
-    elasticSearchClient
-      .index({
-        index: elasticSearchConfig.index,
-        type: type,
-        id : item.referenceId,
-        body: item
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#indexItem :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#indexItem :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}`
+    function indexItem(type, item) {
+        return Q.promise(function(resolve, reject){
+            elasticSearchClient
+              .index({
+                  index: elasticSearchConfig.index,
+                  type: type,
+                  id : item.referenceId,
+                  body: item
+                })
+                .then(function (response) {
+                  console.log("ElasticSearchService#indexItem :: Response :: ", response);
+                  return resolve(response);
+                })
+                .catch(function(err) {
+                  console.log("ElasticSearchService#indexItem :: Error :: ", err);
+                  return reject(err);
+                });
+              });
+          }   
 
 *2. Method to delete the document:  
 Remove the __index_Name__ & __type_Name__ with the name and type of your index*
