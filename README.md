@@ -27,21 +27,21 @@ A node module to access the elasticsearch documents by using various functions t
               });
           }   
 
-*2. Method to delete the document:  
-Remove the __index_Name__ & __type_Name__ with the name and type of your index*
+2. Method to delete the document:  
+Remove the __index_Name__ & __type_Name__ with the name and type of your index
 
-`function deleteDocumentFromElastic(referenceId){
-  return Q.promise(function(resolve, reject) {
-    var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
-    request.delete(url, function (error, response, body) {
-      if(error) {
-        console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
-        return reject(error);
-      }
-      return resolve();
-    });
-  });
-}`
+  function deleteDocumentFromElastic(referenceId){
+    return Q.promise(function(resolve, reject) {
+      var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
+      request.delete(url, function (error, response, body) {
+        if(error) {
+          console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
+          return reject(error);
+        }
+        return resolve();
+        });
+      });
+    }
 
 //Method to search a document by a search query
 function searchItem(searchQuery, lat, lon) {
