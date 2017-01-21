@@ -80,15 +80,7 @@ function searchItem(searchQuery, lat, lon) {
                     }
                   }
                 }
-                // Add more fields
-                //{
-                //   "match_phrase_prefix" : {
-                //     "field_Name_another" : {
-                //       "query" : searchQuery,
-                //       "max_expansions" : 75
-                //     }
-                //   }
-                // }
+                // Can Add more fields similarly like above match_phrase_prefix
               ]
             }
           }
@@ -172,7 +164,7 @@ function searchItemWithDistance(searchQuery, lat, lon, maxDistance) {
 }
 
 
-function addANewFieldToDocument(referenceId, fieldName){
+function addANewFieldToDocument(documentId, fieldName){
   return Q.promise(function(resolve, reject) {
     createScriptWithFieldName(fieldName)
     .then(function(script){
@@ -180,7 +172,7 @@ function addANewFieldToDocument(referenceId, fieldName){
         .update({
           index: elasticSearchConfig.index,
           type: type,
-          id: referenceId,
+          id: documentId,
           body: {
             "script" : fieldName
           }
@@ -188,7 +180,7 @@ function addANewFieldToDocument(referenceId, fieldName){
       return resolve();
     })
     .catch(function(err){
-      console.log(err);
+      console.log("ElasticSearchService#searchItem :: Error :: ", err);
       return reject(err);
     });
   });
@@ -196,7 +188,8 @@ function addANewFieldToDocument(referenceId, fieldName){
 
 function createScriptWithFieldName(fieldName){
   return Q.promise(function(resolve, reject){
-    return 'ctx._source.'+fieldname+ '= true';
+    var fieldName = 'ctx._source.'+fieldname+ '= true';
+    return resolve(fieldName);
   });
 }
 
@@ -213,7 +206,9 @@ function priceAggregation(searchData, searchQuery){
               "field_Name": value
             }
           },
+          //Should acts like 'or' criteria
           "should" : [
+            //Add one or more 'match_phrase_prefix' to check for more fields
             {
               "match_phrase_prefix" : {
                 "field_Name" : {

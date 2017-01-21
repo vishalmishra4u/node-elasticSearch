@@ -44,9 +44,9 @@ Remove the __index_Name__ & __type_Name__ with the name and type of your index
     }
 
 //Method to search a document by a search query
-function searchItem(searchQuery, lat, lon) {
-  return Q.promise(function(resolve, reject) {
 
+  function searchItem(searchQuery, lat, lon) {
+    return Q.promise(function(resolve, reject) {
     elasticSearchClient
       .search({
         index : elasticSearchConfig.index,
