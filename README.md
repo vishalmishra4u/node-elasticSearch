@@ -31,7 +31,7 @@ function indexItem(type, item) {
 
 2. Method to delete the document:  
 Remove the __index_Name__ & __type_Name__ with the name and type of your index
-
+```
   function deleteDocumentFromElastic(referenceId){
     return Q.promise(function(resolve, reject) {
       var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
@@ -44,9 +44,11 @@ Remove the __index_Name__ & __type_Name__ with the name and type of your index
         });
       });
     }
+```
 
 //Method to search a document by a search query
 
+```
   function searchItem(searchQuery, lat, lon) {
     return Q.promise(function(resolve, reject) {
     elasticSearchClient
@@ -95,7 +97,6 @@ Remove the __index_Name__ & __type_Name__ with the name and type of your index
       });
   });
 }
-
 
 function searchItemWithDistance(searchQuery, lat, lon, maxDistance) {
   return Q.promise(function(resolve, reject) {
@@ -363,3 +364,4 @@ function searchToolByReferenceId(referenceId){
       });
   });
 }
+```
