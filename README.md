@@ -9,7 +9,6 @@ A node module to access the elasticsearch documents by using various functions t
 
 ```
 function indexItem(type, item) {
-    return Q.promise(function(resolve, reject){
         elasticSearchClient
             .index({
               index: elasticSearchConfig.index,
@@ -17,40 +16,27 @@ function indexItem(type, item) {
               id : item.referenceId,
               body: item
           })
-          .then(function (response) {
-              console.log("ElasticSearchService#indexItem :: Response :: ", response);
-              return resolve(response);
-          })
-          .catch(function(err) {
-              console.log("ElasticSearchService#indexItem :: Error :: ", err);
-              return reject(err);
-          });
-    });
 }  
 ```
 
-2. Method to delete the document:  
-Remove the __index_Name__ & __type_Name__ with the name and type of your index
+2. __Method to delete the document:__  
+Replace the __index_Name__ & __type_Name__ with the name and type of your index
 ```
   function deleteDocumentFromElastic(referenceId){
-    return Q.promise(function(resolve, reject) {
       var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
       request.delete(url, function (error, response, body) {
         if(error) {
           console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
           return reject(error);
-        }
-        return resolve();
+          }
         });
-      });
     }
 ```
 
-//Method to search a document by a search query
+3. __Method to search a document by a search query__
 
 ```
   function searchItem(searchQuery, lat, lon) {
-    return Q.promise(function(resolve, reject) {
     elasticSearchClient
       .search({
         index : elasticSearchConfig.index,
@@ -73,28 +59,11 @@ Remove the __index_Name__ & __type_Name__ with the name and type of your index
                     }
                   }
                 }
-                // Add more fields
-                //{
-                //   "match_phrase_prefix" : {
-                //     "field_Name_another" : {
-                //       "query" : searchQuery,
-                //       "max_expansions" : 75
-                //     }
-                //   }
-                // }
               ]
             }
           }
         }
       })
-      .then(function (response) {
-        console.log("ElasticSearchService#searchItem :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#searchItem :: Error :: ", err);
-        return reject(err);
-      });
   });
 }
 
