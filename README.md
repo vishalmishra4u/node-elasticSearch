@@ -66,10 +66,10 @@ elasticSearchClient.search({
 ```
 4. __Search a document by search query and filter on distance__
 ```
-  maxDistance=maxDistance+"mi";
+  var maxDistance = maxDistance+"mi";
   elasticSearchClient.search({
-  index: elasticSearchConfig.index,
-  type: type_of_index,
+  index: __index_name__,
+  type: __type_of_index__,
   body: {
     "query": {
       "bool": {
@@ -116,35 +116,23 @@ elasticSearchClient.search({
   }
 })
 ```
+
+5. __Add a field in Existing document__
+
 ```
-function addANewFieldToDocument(referenceId, fieldName){
-  return Q.promise(function(resolve, reject) {
-    createScriptWithFieldName(fieldName)
-    .then(function(script){
-      elasticSearchClient
-        .update({
-          index: elasticSearchConfig.index,
-          type: type,
-          id: referenceId,
-          body: {
-            "script" : fieldName
-          }
-        });
-      return resolve();
-    })
-    .catch(function(err){
-      console.log(err);
-      return reject(err);
-    });
-  });
-}
+var fieldname='ctx._source.'+fieldname+'= true';
+elasticSearchClient.update({
+  index: __index_name__,
+  type: __type_of_index__,
+  id: referenceId,
+  body: {
+    "script": fieldName
+  }
+});
 
-function createScriptWithFieldName(fieldName){
-  return Q.promise(function(resolve, reject){
-    return 'ctx._source.'+fieldname+ '= true';
-  });
-}
+```
 
+```
 function priceAggregation(searchData, searchQuery){
   return Q.promise(function(resolve,reject){
     var filterCriteria = [];
