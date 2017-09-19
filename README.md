@@ -36,38 +36,35 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
 3. __Search a document by a search query__
 
 ```
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: type_of_index, //Index name will come here
-        body: {
-          "query":{
-            "bool":{
-              "must":{
-                "match": {
-                  "field_Name": value
-                }
-              },
-              //Add one or more match_phrase_prefix with more fields
-              //The max_expansions parameter controls how many terms the prefix is allowed to match
-              "should": [
-                {
-                  "match_phrase_prefix" : {
-                    "field_Name" : {
-                      "query" : searchQuery,
-                      "max_expansions" : 75
-                    }
-                  }
-                }
-              ]
+elasticSearchClient.search({
+  index: elasticSearchConfig.index,
+  type: type_of_index,
+  //Indexnamewillcomeherebody: {
+    "query": {
+      "bool": {
+        "must": {
+          "match": {
+            "field_Name": value
+          }
+        },
+        //Add one or more match_phrase_prefix with more fields
+        //The max_expansions parameter controls how many terms the prefix is allowed to match
+        "should": [
+          {
+            "match_phrase_prefix": {
+              "field_Name": {
+                "query": searchQuery,
+                "max_expansions": 75
+              }
             }
           }
-        }
-      })
-  });
-}
+        ]
+      }
+    }
+  }
+})
 ```
-4. 3. __Search a document by search query and filter on distance__
+4. __Search a document by search query and filter on distance__
 ```
   maxDistance=maxDistance+"mi";
   elasticSearchClient.search({
