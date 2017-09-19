@@ -3,7 +3,7 @@ A node module to access the elasticsearch documents by using various functions t
 
 ## Getting Started:
 
-1. Method to index the document. It takes two params :  
+1. __Index the document. It takes two params__ :  
   a) type : __type__ of the elastic  
   b) item : Document to be indexed
 
@@ -19,7 +19,7 @@ function indexItem(type, item) {
 }  
 ```
 
-2. __Method to delete the document:__  
+2. __Delete the document:__  
 Replace the __index_Name__ & __type_Name__ with the name and type of your index
 ```
   function deleteDocumentFromElastic(referenceId){
@@ -33,14 +33,13 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
     }
 ```
 
-3. __Method to search a document by a search query__
+3. __Search a document by a search query__
 
 ```
-  function searchItem(searchQuery, lat, lon) {
     elasticSearchClient
       .search({
         index : elasticSearchConfig.index,
-        type: "type_of_index",
+        type: type_of_index, //Index name will come here
         body: {
           "query":{
             "bool":{
@@ -50,6 +49,7 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
                 }
               },
               //Add one or more match_phrase_prefix with more fields
+              //The max_expansions parameter controls how many terms the prefix is allowed to match
               "should": [
                 {
                   "match_phrase_prefix" : {
@@ -66,73 +66,60 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
       })
   });
 }
-
-function searchItemWithDistance(searchQuery, lat, lon, maxDistance) {
-  return Q.promise(function(resolve, reject) {
-
-    maxDistance = maxDistance+"mi";
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "query":{
-            "bool":{
-              "must":{
-                "match": {
-                  "field_Name": value
-                }
-              },
-              "should": [
-                {
-                  "match_phrase_prefix" : {
-                    "field_Name" : {
-                      "query" : searchQuery,
-                      "max_expansions" : 75
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "sort": [
-            {
-              "_geo_distance": {
-                "location": {
-                  "lat": lat,
-                  "lon": lon
-                },
-                "order":         "asc",
-                "unit":          "mi",
-                "distance_type": "plane"
-              },
-              "script" : "doc[\u0027location\u0027].distanceInKm(lat,lon)"
-            }
-          ],
-          "filter" : {
-            "geo_distance_range" : {
-              "from" : "0mi",
-              "to" : maxDistance,
-              "location" : {
-                "lat" : lat,
-                "lon" : lon
+```
+4. 3. __Search a document by search query and filter on distance__
+```
+  maxDistance=maxDistance+"mi";
+  elasticSearchClient.search({
+  index: elasticSearchConfig.index,
+  type: type_of_index,
+  body: {
+    "query": {
+      "bool": {
+        "must": {
+          "match": {
+            "field_Name": value
+          }
+        },
+        "should": [
+          {
+            "match_phrase_prefix": {
+              "field_Name": {
+                "query": searchQuery,
+                "max_expansions": 75
               }
             }
           }
+        ]
+      }
+    },
+    "sort": [
+      {
+        "_geo_distance": {
+          "location": {
+            "lat": lat,
+            "lon": lon
+          },
+          "order": "asc",
+          "unit": "mi",
+          "distance_type": "plane"
+        },
+      }
+    ],
+    "filter": {
+      "geo_distance_range": {
+        "from": minDistance,
+        "to": maxDistance,
+        "location": {
+          "lat": lat,
+          "lon": lon
         }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#searchItem :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#searchItem :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-
+      }
+    }
+  }
+})
+```
+```
 function addANewFieldToDocument(referenceId, fieldName){
   return Q.promise(function(resolve, reject) {
     createScriptWithFieldName(fieldName)
