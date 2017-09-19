@@ -38,8 +38,8 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
 ```
 elasticSearchClient.search({
   index: elasticSearchConfig.index,
-  type: type_of_index,
-  //Indexnamewillcomeherebody: {
+  type: type_of_index,//Index name will come here
+  body: {
     "query": {
       "bool": {
         "must": {
