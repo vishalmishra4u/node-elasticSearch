@@ -68,8 +68,8 @@ elasticSearchClient.search({
 ```
   var maxDistance = maxDistance+"mi";
   elasticSearchClient.search({
-  index: __index_name__,
-  type: __type_of_index__,
+  index: index_name,
+  type: type_of_index,
   body: {
     "query": {
       "bool": {
@@ -122,8 +122,8 @@ elasticSearchClient.search({
 ```
 var fieldname='ctx._source.'+fieldname+'= true';
 elasticSearchClient.update({
-  index: __index_name__,
-  type: __type_of_index__,
+  index: index_name,
+  type: type_of_index,
   id: referenceId,
   body: {
     "script": fieldName
@@ -131,178 +131,135 @@ elasticSearchClient.update({
 });
 
 ```
+```
+var filterCriteria = [];
+if(data.searchQuery){
+  filterCriteria.push({
+    "bool": {
+      "must": {
+        "match": {
+          //Field which must match with documentry
+          "field_Name": value
+        }
+      },
+      "should": [
+        {
+          "match_phrase_prefix": {
+            "field_Name": {
+              "query": data.searchQuery,
+              "max_expansions": 75
+            }
+          }
+        }
+      ]
+    }
+  });
+}
+//Push to filter Criteria array for the fields to add conditions
+//e.g: geo-distance-query
+filterCriteria.push({
+  "geo_distance_range": {
+    "from": fromDistance || "0mi",
+    "to": toDistance || maxDistance,
+    "location": {
+      "lat": lat,
+      "lon": lon
+    }
+  }
+});
+//e.g: A not query for filtering
+//querying the sent dates do not match a field 
+if(searchData.dateValues){
+  filterCriteria.push({
+    "filtered": {
+      "filter": {
+        "not": {
+          //'terms' is used to compare multiple data
+          "terms": {
+            "field_Name": value
+          }
+        }
+      }
+    }
+  });
+}
+elasticSearchClient
+  .search({
+  index: index_name,
+  type: type_name,
+  body: {
+    "query": {
+      "bool": {
+        "must": filterCriteria
+      }
+    },
+    //This will give anaggregation of min,max and average
+    "aggs": {
+      "priceStats": {
+        "stats": {
+          "field": field_on_which_aggregation_has_to_be_done
+        }
+      }
+    }
+  }
+})
+```
+
+__Filter documents on the basis of upper and lower limit__
+```
+//Filter on the basis of lower and upper limit
+elasticSearchClient
+  .search({
+  index: index_name,
+  type: type_Name,
+  body: {
+    "query": {
+      "range": {
+        "field_Name": {
+          "gte": lowerLimit,
+          "lte": upperLimit
+        }
+      }
+    }
+  }
+})
+      
+```
+
+__Updating elastic documents fields__
+```
+elasticSearchClient
+  .update({
+  index: index_name,
+  type: type_name,
+  id: referenceId,
+  body: {
+    "doc": {
+      //Update the fields one by one
+      field1: document.field1
+    }
+  }
+})
 
 ```
-function priceAggregation(searchData, searchQuery){
-  return Q.promise(function(resolve,reject){
-    var filterCriteria = [];
 
-    if(data.searchQuery){
-      filterCriteria.push({
-        "bool" : {
-          "must":{
-            "match": {
-              //Field which must match with documentry
-              "field_Name": value
-            }
-          },
-          "should" : [
-            {
-              "match_phrase_prefix" : {
-                "field_Name" : {
-                  "query" : data.searchQuery,
-                  "max_expansions" : 75
-                }
-              }
-            }
-          ]
+__Filtering the documents on the basis of unique referenceId__
+```
+elasticSearchClient
+  .search({
+  index: index_name,
+  type: type_name,
+  body: {
+    "size": 1,
+    query: {
+      "filtered": {
+        "filter": {
+          "match": {
+            "referenceId": referenceId
+          }
         }
-      });
+      }
     }
-
-    //Push to filterCriteria array for the fields to add conditions
-    //e.g : geo-distance-query
-    filterCriteria.push(
-      {
-        "geo_distance_range" : {
-          "from" : searchData.fromDistance ? searchData.fromDistance : "0mi",
-          "to" : searchData.toDistance ? searchData.toDistance : searchData.maxDistance,
-          "location" : {
-            "lat" : searchData.lat, "lon" : searchData.lon
-          }
-        }
-      });
-
-    //e.g : A not query for filtering
-    //querying the sent dates do not match a field
-    if(searchData.dateValues){
-      filterCriteria.push({
-        "filtered" : {
-          "filter": {
-            "not" : {
-              // 'terms' is used to compare multiple data
-              "terms": {
-                "field_Name": value
-              }
-            }
-          }
-        }
-      });
-    }
-
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "Tool",
-        body: {
-          "query": {
-            "bool": {
-              "must": filterCriteria
-            }
-          },
-          //This will give an aggregation of min, max and average
-          "aggs": {
-            "priceStats": {
-              "stats": {
-                "field": "field_on_which_aggregation_has_to_be_done"
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#distanceFilter :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#distanceFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-//Filter on the basis of lower and upper limit
-function UpperLowerlimitFilter(lowerLimit, upperLimit){
-  return Q.promise(function(resolve, reject){
-    elasticSearchClient
-      .search({
-        index : elasticSearchConfig.index,
-        type: "type_Name",
-        body: {
-          "query": {
-            "range" : {
-              "field_Name" : {
-                "gte" : lowerLimit,
-                "lte" : upperLimit
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#priceFilter :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#priceFilter :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-
-function updateDocument(referenceId, document){
-  return Q.promise(function(resolve, reject){
-    elasticSearchClient
-      .update({
-        index: elasticSearchConfig.index,
-        type: "Tool",
-        id : referenceId,
-        body: {
-          "doc" : {
-            //Update the fields one by one
-            //field1 : document.field1
-          }
-        }
-      })
-      .then(function(){
-        console.log("ElasticSearchService#updateDocument :: response :: ", response);
-        return resolve();
-      })
-      .catch(function (err) {
-        console.log("ElasticSearchService#updateDocument :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
-
-function searchToolByReferenceId(referenceId){
-  return Q.promise(function(resolve, reject) {
-    elasticSearchClient
-      .search({
-        index: elasticSearchConfig.index,
-        type: "index_Name",
-        body: {
-          "size": 1,
-          query: {
-            "filtered": {
-              "filter": {
-                "match": {
-                  "referenceId": referenceId
-                }
-              }
-            }
-          }
-        }
-      })
-      .then(function (response) {
-        console.log("ElasticSearchService#searchItem :: Response :: ", response);
-        return resolve(response);
-      })
-      .catch(function(err) {
-        console.log("ElasticSearchService#searchItem :: Error :: ", err);
-        return reject(err);
-      });
-  });
-}
+  }
+})
 ```
