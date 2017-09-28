@@ -11,8 +11,8 @@ A node module to access the elasticsearch documents by using various functions t
 function indexItem(type, item) {
         elasticSearchClient
             .index({
-              index: elasticSearchConfig.index,
-              type: type,
+              index: index_name,
+              type: type_name,
               id : item.referenceId,
               body: item
           })
@@ -27,7 +27,7 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
       request.delete(url, function (error, response, body) {
         if(error) {
           console.log("ElasticSearchService#deleteToolFromElastic :: Error :: ", error);
-          return reject(error);
+          throw new(error);
           }
         });
     }
@@ -37,8 +37,8 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
 
 ```
 elasticSearchClient.search({
-  index: elasticSearchConfig.index,
-  type: type_of_index,//Index name will come here
+  index: index_name,
+  type: type_name,//Index name will come here
   body: {
     "query": {
       "bool": {
