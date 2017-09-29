@@ -1,12 +1,13 @@
 # node-elasticSearch
-A node module to access the elasticsearch documents by using various functions to index, search, update, delete and various other tasks.
+A Github repository to learn the How-Tos of elasticsearch for indexing, searching, updating, deleting and various other tasks.
 
 ## Getting Started:
 
-1. __Index the document. It takes two params__ :  
-  a) type : __type__ of the elastic  
-  b) item : Document to be indexed
+### Points before going through the document:
+1. index_name specifies the index of the elasticsearch being used.
+2. type_name specifies the type of the index. (An index may have multiple types)
 
+1. __Index the document__
 ```
 function indexItem(type, item) {
         elasticSearchClient
@@ -20,7 +21,6 @@ function indexItem(type, item) {
 ```
 
 2. __Delete the document:__  
-Replace the __index_Name__ & __type_Name__ with the name and type of your index
 ```
   function deleteDocumentFromElastic(referenceId){
       var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
@@ -34,11 +34,10 @@ Replace the __index_Name__ & __type_Name__ with the name and type of your index
 ```
 
 3. __Search a document by a search query__
-
 ```
 elasticSearchClient.search({
   index: index_name,
-  type: type_name,//Index name will come here
+  type: type_name,
   body: {
     "query": {
       "bool": {
@@ -64,12 +63,13 @@ elasticSearchClient.search({
   }
 })
 ```
+
 4. __Search a document by search query and filter on distance__
 ```
   var maxDistance = maxDistance+"mi";
   elasticSearchClient.search({
   index: index_name,
-  type: type_of_index,
+  type: type_name,
   body: {
     "query": {
       "bool": {
@@ -118,7 +118,6 @@ elasticSearchClient.search({
 ```
 
 5. __Add a field in Existing document__
-
 ```
 var fieldname='ctx._source.'+fieldname+'= true';
 elasticSearchClient.update({
@@ -131,6 +130,8 @@ elasticSearchClient.update({
 });
 
 ```
+
+6. __Searching by using all the parameters__
 ```
 var filterCriteria = [];
 if(data.searchQuery){
@@ -205,7 +206,7 @@ elasticSearchClient
 })
 ```
 
-__Filter documents on the basis of upper and lower limit__
+7. __Filter documents on the basis of upper and lower limit__
 ```
 //Filter on the basis of lower and upper limit
 elasticSearchClient
@@ -226,7 +227,7 @@ elasticSearchClient
       
 ```
 
-__Updating elastic documents fields__
+8. __Updating elastic documents fields__
 ```
 elasticSearchClient
   .update({
@@ -243,7 +244,7 @@ elasticSearchClient
 
 ```
 
-__Filtering the documents on the basis of unique referenceId__
+9. __Filtering the documents on the basis of unique referenceId__
 ```
 elasticSearchClient
   .search({
