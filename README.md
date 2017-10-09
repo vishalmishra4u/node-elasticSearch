@@ -1,5 +1,5 @@
 # node-elasticSearch
-A Github repository to learn the How-Tos of elasticsearch for indexing, searching, updating, deleting and various other tasks.
+A Github documentation to learn the How-Tos of elasticsearch for indexing, searching, updating, deleting and various other tasks.
 
 ## Getting Started:
 
@@ -20,7 +20,7 @@ function indexItem(type, item) {
 }  
 ```
 
-2. __Delete the document:__  
+2. __Delete the document:__
 ```
   function deleteDocumentFromElastic(referenceId){
       var url = 'http://localhost:9200/'+ index_Name + '/' + type_Name + '/ss'+ referenceId;
